@@ -1,0 +1,52 @@
+clc; clear; close all;
+%% Read EMG data
+emg = load('emg_dog2.dat');
+fs = 10000;
+emg = emg*1000/20;
+l = length (emg);
+t = (1:l)/fs;
+emg = emg/max(abs(emg));
+emg = emg - mean(emg);
+env = load('emg_dog2_env.dat');
+fs2 = 1000;
+l2 = length(env);
+t2=(1:l2)/fs2;
+figure(1); 
+subplot(211); plot(t, emg);
+title('EMG Signal');
+subplot(212); plot(t2, env);
+title('Reference Envelope');
+%% Half-wave Rectification
+emg_h = zeros(1, l);
+[locx, ~]= find(emg>0);
+emg_h(locx) = emg(locx);
+figure(2);
+subplot(211); plot(t,emg_h);
+title('Half wave rectified waveform');
+%% Full-wave rectification
+[locx, ~] = find(emg>0);
+emg_f(locx) = emg(locx);
+[locx, ~] = find(emg<0);
+emg_f(locx) = -emg(locx);
+subplot(212); plot(t,emg_f);
+title('Full wave rectified waveform');
+
+%% Low pass filtering
+N=8; Fc=6;
+h=fdesign.lowpass('N,F3dB' , N, Fc, fs);
+Hd_butter = design (h, 'butter');
+
+% Filtering the half-wave rectified signal
+emg_hout = filter(Hd_butter, emg_h');
+
+% Filtering the full-wave rectified signal
+emg_fout = filter(Hd_butter, emg_f');
+
+% Plot
+figure(3);
+subplot(311); plot(emg_hout);
+title('LPF Half wave rectified waveform');
+subplot(312); plot(emg_fout);
+title('LPF Half wave rectified waveform');
+subplot(313); plot(env);
+title('Reference Envelope');
